@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Taqvim</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #e2e8f0; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .calendar { background: white; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 350px; overflow: hidden; }
+        .header { background: #3b82f6; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .nav { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 5px 10px; }
+        .nav:hover { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 10px 0; background: #f8fafc; text-align: center; font-weight: bold; color: #64748b; font-size: 14px; }
+        .days { display: grid; grid-template-columns: repeat(7, 1fr); padding: 10px; gap: 4px; }
+        .day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; position: relative; font-size: 14px; transition: 0.2s; }
+        .day:hover { background: #e2e8f0; }
+        .day.today { background: #3b82f6; color: white; font-weight: bold; }
+        .day.other { color: #cbd5e1; cursor: default; }
+        .day.event::after { content: ''; position: absolute; bottom: 4px; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <div class="calendar">
+        <div class="header">
+            <button class="nav" onclick="changeMonth(-1)">‹</button>
+            <span id="monthYear"></span>
+            <button class="nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="weekdays">Du Se Ch Pa Ju Sh Ya</div>
+        <div class="days" id="daysGrid"></div>
+    </div>
+
+    <script>
+        const months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+        let currentDate = new Date();
+        let events = JSON.parse(localStorage.getItem('calEvents')) || {};
+
+        function render() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('monthYear').textContent = `${months[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('daysGrid');
+            grid.innerHTML = '';
+
+            // Bo'sh kataklar
+            const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+            for (let i = 0; i < startOffset; i++) grid.innerHTML += `<div class="day other"></div>`;
+            
+            // Kunlar
+            const today = new Date();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+                const hasEvent = events[dateStr] && events[dateStr].length > 0;
+                
+                const div = document.createElement('div');
+                div.className = `day ${isToday ? 'today' : ''} ${hasEvent ? 'event' : ''}`;
+                div.textContent = d;
+                div.onclick = () => addEvent(dateStr);
+                grid.appendChild(div);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            render();
+        }
+
+        function addEvent(dateStr) {
+            const event = prompt(`${dateStr} uchun voqea qo'shing:`);
+            if (event?.trim()) {
+                if (!events[dateStr]) events[dateStr] = [];
+                events[dateStr].push(event.trim());
+                localStorage.setItem('calEvents', JSON.stringify(events));
+                render();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
